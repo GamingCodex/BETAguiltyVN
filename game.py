@@ -125,7 +125,7 @@ class Piece:
 # Función para crear piezas de un puzzle
 def create_pieces(num_pieces):
     pieces = []
-    # Por simplicidad, usa imágenes iguales (puedes cargar distintas)
+    # Por simplicidad, usa imágenes iguales (podes cargar distintas)
     base_image = pygame.Surface((CELL_SIZE, CELL_SIZE))
     base_image.fill((100, 100, 255))
     for i in range(num_pieces):
@@ -309,7 +309,7 @@ def menu():
 # Menú pausa
 def pause_menu():
     while True:
-        screen.fill(BG_COLOR)
+        screen.blit(menu_background_img, (0, 0))
         draw_text(screen, "Guilty Memories", big_menu_font, TEXT_COLOR, SCREEN_WIDTH//2 - 250, 80)
 
         mx, my = pygame.mouse.get_pos()
