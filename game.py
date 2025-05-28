@@ -125,13 +125,14 @@ class Piece:
 # Función para crear piezas de un puzzle
 def create_pieces(num_pieces):
     pieces = []
-    # Por simplicidad, usa imágenes iguales (podes cargar distintas)
     base_image = pygame.Surface((CELL_SIZE, CELL_SIZE))
     base_image.fill((100, 100, 255))
     for i in range(num_pieces):
-        # Crea imagen con número para distinguir
         img = base_image.copy()
-        draw_text(img, str(i+1), generic_font, (255, 255, 255), 10, 10)
+        # Center the number
+        number_text = generic_font.render(str(i+1), True, (255, 255, 255))
+        text_rect = number_text.get_rect(center=(CELL_SIZE//2, CELL_SIZE//2))
+        img.blit(number_text, text_rect)
         pieces.append(Piece(i, img))
     return pieces
 
@@ -269,7 +270,7 @@ def draw_vn_scene(scene, dialogue_index):
 def menu():
     while True:
         screen.blit(menu_background_img, (0, 0))
-        draw_text(screen, "Guilty Memories", big_menu_font, TEXT_COLOR, SCREEN_WIDTH//2 - 250, 80)
+        draw_text(screen, "Guilty Memories", big_menu_font, TEXT_COLOR, SCREEN_WIDTH//2 - 250, 100)
 
         mx, my = pygame.mouse.get_pos()
 
@@ -310,7 +311,8 @@ def menu():
 def pause_menu():
     while True:
         screen.blit(menu_background_img, (0, 0))
-        draw_text(screen, "Guilty Memories", big_menu_font, TEXT_COLOR, SCREEN_WIDTH//2 - 250, 80)
+        # Title above the buttons
+        draw_text(screen, "Guilty Memories", big_menu_font, TEXT_COLOR, SCREEN_WIDTH//2 - 250, 150)
 
         mx, my = pygame.mouse.get_pos()
 
@@ -431,7 +433,7 @@ def game_loop():
                             col, row = cell
                             # Validar no esté ocupado
                             occupied = any((other.board_pos == (col, row)) for other in pieces if other.placed)
-                            if not occupied:
+                            if not occupied and can_place_piece(pieces, dragging_piece, col, row):
                                 dragging_piece.placed = True
                                 dragging_piece.board_pos = (col, row)
                                 # Ajustar posición al centro celda
@@ -547,6 +549,26 @@ def end_game_screen():
 
         pygame.display.update()
         clock.tick(60)
+
+def can_place_piece(pieces, piece, col, row):
+    piece_num = piece.index + 1  # The number on the piece
+
+    placed_count = sum(1 for p in pieces if p.placed)
+    if placed_count == 0:
+        return True  # Allow any piece as the first
+
+    # Allow placing if adjacent to previous or next number
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    for dx, dy in directions:
+        adj_col = col + dx
+        adj_row = row + dy
+        if 0 <= adj_col < COLS and 0 <= adj_row < ROWS:
+            for other in pieces:
+                if other.placed and other.board_pos == (adj_col, adj_row):
+                    other_num = other.index + 1
+                    if abs(other_num - piece_num) == 1:
+                        return True
+    return False
 
 # Programa principal
 def main():
