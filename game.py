@@ -379,135 +379,143 @@ def game_loop():
     level = 1
 
     while level <= max_levels:
-        # Crear piezas para el nivel
-        num_pieces = ROWS * COLS
-        pieces = create_pieces(num_pieces)
+        restart_level = True
+        while restart_level:
+            # Crear piezas para el nivel
+            num_pieces = ROWS * COLS
+            pieces = create_pieces(num_pieces)
 
-        # Mezclar piezas y posicionar fuera del tablero
-        for p in pieces:
-            p.placed = False
-            p.board_pos = None
-        position_pieces_around_board(pieces)
+            # Mezclar piezas y posicionar fuera del tablero
+            for p in pieces:
+                p.placed = False
+                p.board_pos = None
+            position_pieces_around_board(pieces)
 
-        dragging_piece = None
-        offset_x = 0
-        offset_y = 0
+            dragging_piece = None
+            offset_x = 0
+            offset_y = 0
 
-        # Cronómetro inicio para nivel
-        start_ticks = pygame.time.get_ticks()
+            # Cronómetro inicio para nivel
+            start_ticks = pygame.time.get_ticks()
 
-        # Diálogo inicial nivel
-        dialog_index = 0
-        dialog_lines = [puzzle_dialogs[level-1][dialog_index]]
+            # Diálogo inicial nivel
+            dialog_index = 0
+            dialog_lines = [puzzle_dialogs[level-1][dialog_index]]
 
-        running_level = True
-        paused = False
+            running_level = True
+            paused = False
 
-        while running_level:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+            while running_level:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        paused = True
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            paused = True
 
-                if paused:
-                    continue  # Ignorar eventos de juego mientras está pausado
+                    if paused:
+                        continue  # Ignorar eventos de juego mientras está pausado
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        for p in reversed(pieces):  # Prioridad pieza encima
-                            if p.rect.collidepoint(event.pos) and not p.placed:
-                                dragging_piece = p
-                                mouse_x, mouse_y = event.pos
-                                offset_x = p.rect.x - mouse_x
-                                offset_y = p.rect.y - mouse_y
-                                break
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            for p in reversed(pieces):  # Prioridad pieza encima
+                                if p.rect.collidepoint(event.pos) and not p.placed:
+                                    dragging_piece = p
+                                    mouse_x, mouse_y = event.pos
+                                    offset_x = p.rect.x - mouse_x
+                                    offset_y = p.rect.y - mouse_y
+                                    break
 
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == 1 and dragging_piece:
-                        cell = get_board_cell(event.pos)
-                        if cell:
-                            col, row = cell
-                            # Validar no esté ocupado
-                            occupied = any((other.board_pos == (col, row)) for other in pieces if other.placed)
-                            if not occupied and can_place_piece(pieces, dragging_piece, col, row):
-                                dragging_piece.placed = True
-                                dragging_piece.board_pos = (col, row)
-                                # Ajustar posición al centro celda
-                                dragging_piece.rect.topleft = (BOARD_X_OFFSET + col*CELL_SIZE, BOARD_Y_OFFSET + row*CELL_SIZE)
+                    elif event.type == pygame.MOUSEBUTTONUP:
+                        if event.button == 1 and dragging_piece:
+                            cell = get_board_cell(event.pos)
+                            if cell:
+                                col, row = cell
+                                # Validar no esté ocupado
+                                occupied = any((other.board_pos == (col, row)) for other in pieces if other.placed)
+                                if not occupied and can_place_piece(pieces, dragging_piece, col, row):
+                                    dragging_piece.placed = True
+                                    dragging_piece.board_pos = (col, row)
+                                    # Ajustar posición al centro celda
+                                    dragging_piece.rect.topleft = (BOARD_X_OFFSET + col*CELL_SIZE, BOARD_Y_OFFSET + row*CELL_SIZE)
+                                else:
+                                    # Regresa a su posición fuera del tablero
+                                    dragging_piece.placed = False
+                                    dragging_piece.board_pos = None
+                                    position_pieces_around_board(pieces)
                             else:
                                 # Regresa a su posición fuera del tablero
                                 dragging_piece.placed = False
                                 dragging_piece.board_pos = None
                                 position_pieces_around_board(pieces)
-                        else:
-                            # Regresa a su posición fuera del tablero
-                            dragging_piece.placed = False
-                            dragging_piece.board_pos = None
-                            position_pieces_around_board(pieces)
-                        dragging_piece = None
+                            dragging_piece = None
 
-                elif event.type == pygame.MOUSEMOTION:
-                    if dragging_piece:
-                        mouse_x, mouse_y = event.pos
-                        dragging_piece.rect.x = mouse_x + offset_x
-                        dragging_piece.rect.y = mouse_y + offset_y
+                    elif event.type == pygame.MOUSEMOTION:
+                        if dragging_piece:
+                            mouse_x, mouse_y = event.pos
+                            dragging_piece.rect.x = mouse_x + offset_x
+                            dragging_piece.rect.y = mouse_y + offset_y
 
-            # Pausa menú
-            while paused:
-                action = pause_menu()
-                if action == "restart":
-                    running_level = False
-                    paused = False
+                # Pausa menú
+                while paused:
+                    action = pause_menu()
+                    if action == "restart":
+                        paused = False
+                        restart_level = True
+                        running_level = False
+                        break
+
+                if not running_level:
                     break
 
-            if not running_level:
-                break
+                # Dibujar todo
+                screen.blit(background_img, (0, 0))
+                draw_board()
 
-            # Dibujar todo
-            screen.blit(background_img, (0, 0))
-            draw_board()
+                for p in pieces:
+                    p.draw(screen)
 
-            for p in pieces:
-                p.draw(screen)
+                draw_dialog_box(dialog_lines)
 
-            draw_dialog_box(dialog_lines)
+                draw_timer(start_ticks)
+                draw_level(level)
 
-            draw_timer(start_ticks)
-            draw_level(level)
+                # Actualizar diálogo cada cierto tiempo (cada 6 segundos)
+                elapsed = (pygame.time.get_ticks() - start_ticks) // 1000
+                idx = elapsed // 6
+                if idx < len(puzzle_dialogs[level-1]):
+                    dialog_lines = [puzzle_dialogs[level-1][idx]]
+                else:
+                    dialog_lines = []
 
-            # Actualizar diálogo cada cierto tiempo (cada 6 segundos)
-            elapsed = (pygame.time.get_ticks() - start_ticks) // 1000
-            idx = elapsed // 6
-            if idx < len(puzzle_dialogs[level-1]):
-                dialog_lines = [puzzle_dialogs[level-1][idx]]
-            else:
-                dialog_lines = []
+                # Verificar si todas piezas están colocadas (nivel completado)
+                if all(p.placed and p.board_pos is not None for p in pieces):
+                    # Pequeña pausa antes de avanzar
+                    pygame.display.update()
+                    pygame.time.delay(1000)
+                    restart_level = False  # <-- Ensure we don't restart after completion
+                    break
 
-            # Verificar si todas piezas están colocadas (nivel completado)
-            if all(p.placed and p.board_pos is not None for p in pieces):
-                # Pequeña pausa antes de avanzar
+                # Verificar tiempo restante
+                if (pygame.time.get_ticks() - start_ticks) // 1000 >= TOTAL_TIME:
+                    # Mostrar pantalla Game Over y volver menú
+                    game_over_screen()
+                    return
+
                 pygame.display.update()
-                pygame.time.delay(1000)
-                break
+                clock.tick(60)
 
-            # Verificar tiempo restante
-            if (pygame.time.get_ticks() - start_ticks) // 1000 >= TOTAL_TIME:
-                # Mostrar pantalla Game Over y volver menú
-                game_over_screen()
-                return
+            # If we exited the level loop because of restart, restart the level
+            if restart_level:
+                continue
 
-            pygame.display.update()
-            clock.tick(60)
+            # Tras completar nivel 1, mostrar escena VN
+            if level == 1:
+                run_vn_scene()
 
-        # Tras completar nivel 1, mostrar escena VN
-        if level == 1:
-            run_vn_scene()
-
-        level += 1
+            level += 1
 
     # Fin juego (puedes agregar pantalla de finalización)
     end_game_screen()
